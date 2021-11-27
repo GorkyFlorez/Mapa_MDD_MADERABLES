@@ -1,0 +1,86 @@
+---
+title: "Visor Informativo de la Gestion de los recursos Forestales - GOREMAD"
+author: "Catastro GRFFS"
+date: ""
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: rows
+    social: menu
+    vertical_layout: fill
+    
+    #theme: journal
+---
+
+```{r setup, include=FALSE}
+library(openxlsx)
+library(crosstalk) 
+library(DT)            # Para generaar la tabla
+library(sf)
+library(leaflet)
+library(leaflet.extras)
+library(leaflet.providers)
+library(htmlwidgets)
+library(leafem)
+library(flexdashboard)
+  #Definiendo el Logo
+m="https://images.vexels.com/media/users/3/143561/isolated/preview/afa3aa927b63061e3b0222b7dab9cdbf-ubicaci--n-n--utica-norte-flecha-vintage-by-vexels.png"
+
+
+PDFM         <- st_read("SHP/Concesion_castañeras.shp")                                  #Concesiones de Castaña 
+Con_PDFM     <- st_transform(PDFM  ,crs = st_crs("+proj=longlat +datum=WGS84 +no_defs")) # Poner en uns proyeccion
+                                              # Transformamos a un nuevo data
+
+
+polygon_popup <- paste0("<strong>Contrato: </strong>", Con_PDFM$contra, "<br>",          # Label
+                        "<strong>Titular: </strong>", Con_PDFM$nomtit,"<br>",
+                        "<strong>Otorgado: </strong>", Con_PDFM$nomrel,"<br>",
+                        "<strong>Sector: </strong>", Con_PDFM$sector,"<br>",
+                        "<strong>Perimetro: </strong>", Con_PDFM$perime,"<br>",
+                        "<strong>Area SIG: </strong>", Con_PDFM$supsig,"<br>")
+```
+
+
+# Visor Informativo {data-icon="ion-stats-bars"}
+
+Column {data-width=150}
+-------------------------------------
+### Mapa
+```{r}
+leaflet() %>%
+    addControl(html = "<p><strong><em>Concesiones Forestales en Madre de Dios</em></strong></p>",
+             position = "topright")%>%
+  addLogo(m,url = "https://images.vexels.com/media/users/3/143561/isolated/preview/afa3aa927b63061e3b0222b7dab9cdbf-ubicaci--n-n--utica-norte-flecha-vintage-by-vexels.png",
+          position = "topleft",
+          offset.x = 50,
+          offset.y = 10,
+          width = 100,
+          height = 100)%>%
+addPolygons(data= Con_PDFM ,popup = polygon_popup,color = "firebrick", fillOpacity = 0.001,weight = 2,group = "Concesiones PFDM") %>%
+addLayersControl(baseGroups = c("Satellite", "OSM","OTM","Toner","Terrain","Terrain.ESRI", "Toner Lite","CartoDB.Positron", "relieve"),
+                 overlayGroups = c("Concesiones PFDM" ),
+                 position = "topright",
+                 options = layersControlOptions(collapsed = T))%>%
+ addProviderTiles(providers$OpenStreetMap, group = "OSM")%>%
+  addProviderTiles(providers$Esri.WorldImagery, group = "Satellite")%>%
+  addProviderTiles(providers$OpenTopoMap, group = "OTM")%>%
+  addProviderTiles(providers$Stamen.Toner, group = "Toner") %>%
+  addProviderTiles(providers$Stamen.Terrain, group = "Terrain") %>%
+  addProviderTiles(providers$Esri.WorldStreetMap, group = "Terrain.ESRI") %>%
+  addProviderTiles(providers$CartoDB.Positron, group ="CartoDB.Positron") %>%
+  addProviderTiles(providers$Stamen.TonerLite, group = "Toner Lite") %>%
+  addMiniMap(tiles = providers$Esri.WorldImagery,toggleDisplay = TRUE)%>%
+  addScaleBar(position = "bottomright",options = scaleBarOptions(maxWidth = 100,
+                                                                 metric = TRUE,
+                                                                 imperial = TRUE,
+                                                                 updateWhenIdle = TRUE)) %>%
+  addDrawToolbar(targetGroup = "Graficos",editOptions = editToolbarOptions(selectedPathOptions = selectedPathOptions()))%>%
+  addMeasure(position = "topleft",
+             primaryLengthUnit = "meters",
+             primaryAreaUnit = "sqmeters",
+             activeColor = "#3D535D",
+             completedColor = "#7D4479")%>% 
+  addSearchGoogle() %>% 
+  addControlGPS() %>% 
+  addResetMapButton()
+```
+
