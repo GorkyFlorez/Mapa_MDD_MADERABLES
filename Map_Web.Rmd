@@ -29,7 +29,9 @@ m="https://images.vexels.com/media/users/3/143561/isolated/preview/afa3aa927b630
 PDFM         <- st_read("SHP/Concesion_castañeras.shp")                                  #Concesiones de Castaña 
 Con_PDFM     <- st_transform(PDFM  ,crs = st_crs("+proj=longlat +datum=WGS84 +no_defs")) # Poner en uns proyeccion
                                               # Transformamos a un nuevo data
-
+SPP           <- st_read("SHP/Especies.shp")
+SPP_Madera    <- st_transform(SPP,crs = st_crs("+proj=longlat +datum=WGS84 +no_defs"))
+SPP_Made_pon  <- cbind(SPP_Madera , st_coordinates(st_centroid(SPP_Madera$geometry))) 
 
 polygon_popup <- paste0("<strong>Contrato: </strong>", Con_PDFM$contra, "<br>",          # Label
                         "<strong>Titular: </strong>", Con_PDFM$nomtit,"<br>",
@@ -60,6 +62,7 @@ addLayersControl(baseGroups = c("Satellite", "OSM","OTM","Toner","Terrain","Terr
                  overlayGroups = c("Concesiones PFDM" ),
                  position = "topright",
                  options = layersControlOptions(collapsed = T))%>%
+  leaflet.extras::addHeatmap(data =SPP_Made_pon, blur = 20, max = 0.05,radius = 12,group = "heatmap de Especies")%>%
  addProviderTiles(providers$OpenStreetMap, group = "OSM")%>%
   addProviderTiles(providers$Esri.WorldImagery, group = "Satellite")%>%
   addProviderTiles(providers$OpenTopoMap, group = "OTM")%>%
